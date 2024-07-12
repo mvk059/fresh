@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fresh/features/auth/presentation/profile_screen.dart';
+import 'package:fresh/features/profile/ui/profile_screen.dart';
 
-import 'home_screen.dart';
-import 'maps_screen.dart';
+import '../home/home_screen.dart';
+import '../maps/maps_screen.dart';
 
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 

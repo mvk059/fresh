@@ -1,24 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fresh/app/providers.dart';
+import 'package:fresh/features/auth/state/login_notifier.dart';
+import 'package:fresh/features/auth/state/login_state.dart';
 
-import 'main_screen.dart';
+import '../../main/main_screen.dart';
 
-class LoginNotifier extends StateNotifier<AsyncValue<bool>> {
-
-  LoginNotifier(super.state);
-
-  Future<void> login() async {
-    state = const AsyncValue.loading();
-    try {
-      // Simulate verification
-      await Future.delayed(const Duration(seconds: 2));
-      state = const AsyncValue.data(true);
-    } catch(e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}
+final loginProvider = StateNotifierProvider<LoginNotifier, LoginState>((ref) {
+  return LoginNotifier(ref.watch(preferencesProvider));
+});
 
 class LoginScreen extends ConsumerWidget {
   final TextEditingController _phoneController = TextEditingController();
@@ -27,6 +17,16 @@ class LoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loginState = ref.watch(loginProvider);
+
+    ref.listen<LoginState>(loginProvider, (_, state) {
+      if (state.error == null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
       body: Padding(
@@ -42,18 +42,12 @@ class LoginScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const MainScreen())
-                  );
+                  ref.read(loginProvider.notifier).login(_phoneController.text);
                 },
-                child: const Text('Send OTP')
-            ),
-            const SizedBox(height: 20),
-
+                child: const Text('Send OTP')),
           ],
         ),
       ),
     );
   }
-
 }
