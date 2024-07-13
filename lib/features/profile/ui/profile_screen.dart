@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fresh/app/providers.dart';
+import 'package:fresh/features/auth/presentation/login_screen.dart';
 import 'package:fresh/features/profile/state/profile_notifier.dart';
 import 'package:fresh/features/profile/state/profile_state.dart';
 
@@ -10,24 +11,29 @@ final profileProvider =
 });
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Profile: ${profileState.phoneNumber}"),
-          ],
-        ),
+      appBar: AppBar(title: Text('Profile')),
+      body: ListView(
+        children: [
+          ListTile(
+              title: Text(
+                  'Phone: ${profileState.phoneNumber ?? 'Not logged in'}')),
+          ListTile(title: Text('Settings'), onTap: () {}),
+          ListTile(title: Text('History'), onTap: () {}),
+          ListTile(
+            title: Text('Logout'),
+            onTap: () async {
+              await ref.read(profileProvider.notifier).logout();
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => LoginScreen()),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

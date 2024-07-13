@@ -17,12 +17,12 @@ class LoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loginState = ref.watch(loginProvider);
+    // final loginState = ref.watch(loginProvider);
 
     ref.listen<LoginState>(loginProvider, (_, state) {
       if (state.error == null) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
+          MaterialPageRoute(builder: (_) => MainScreen()),
         );
       }
     });
