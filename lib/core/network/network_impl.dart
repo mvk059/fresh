@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -9,6 +10,7 @@ class NetworkImpl implements NetworkInterface {
 
   @override
   Future<Map<String, dynamic>> get(String endpoint) async {
+    return HashMap();
     final response = await http.get(Uri.parse('$baseUrl/$endpoint'));
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -35,6 +37,7 @@ class NetworkImpl implements NetworkInterface {
   @override
   Future<List<Map<String, dynamic>>> syncCoordinates(
       List<Map<String, dynamic>> coordinates) async {
+    return [];
     final response = await http.post(
       Uri.parse('$baseUrl/sync_coordinates'),
       body: json.encode(coordinates),
