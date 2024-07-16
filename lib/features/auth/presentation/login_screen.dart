@@ -7,7 +7,7 @@ import 'package:fresh/features/auth/state/login_state.dart';
 import '../../main/main_screen.dart';
 
 final loginProvider = StateNotifierProvider<LoginNotifier, LoginState>((ref) {
-  return LoginNotifier(ref.watch(preferencesProvider));
+  return LoginNotifier(ref.watch(preferencesProvider), ref.watch(loggerProvider));
 });
 
 class LoginScreen extends ConsumerWidget {

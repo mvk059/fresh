@@ -4,14 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fresh/app/providers.dart';
 import 'package:fresh/core/sync/sync_notifier.dart';
 import 'package:fresh/core/utils/connectivity.dart';
+import 'package:fresh/core/utils/connectivity_notifier.dart';
 import 'package:fresh/features/home/state/home_notifier.dart';
 import 'package:fresh/features/home/state/home_state.dart';
 
 final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
   return HomeNotifier(
-      ref.watch(databaseProvider),
-      ref.watch(syncServiceProvider.notifier)
-  );
+      ref.watch(databaseProvider), ref.watch(syncServiceProvider.notifier), ref);
 });
 
 class HomeScreen extends ConsumerWidget {
@@ -23,7 +22,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
-    final connectivity = ref.watch(connectivityProvider);
+    final connectivity = ref.watch(connectivityNotifierProvider);
+    final syncState = ref.watch(syncServiceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +60,12 @@ class HomeScreen extends ConsumerWidget {
                   onPressed: () {
                     final lat = double.tryParse(_latitudeController.text);
                     final lon = double.tryParse(_longitudeController.text);
-                    if (lat != null && lon != null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                    if (lat != null &&
+                        lon != null &&
+                        lat >= -90 &&
+                        lat <= 90 &&
+                        lon >= -180 &&
+                        lon <= 180) {
                       ref.read(homeProvider.notifier).addCoordinate(lat, lon);
                       _latitudeController.clear();
                       _longitudeController.clear();
@@ -76,7 +81,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: homeState.isLoading
+            child: homeState.isLoading || syncState.isSyncing
                 ? Center(child: CircularProgressIndicator())
                 : homeState.error != null
                 ? Center(child: Text(homeState.error!))
@@ -91,17 +96,20 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
           ),
-          connectivity.when(
-            data: (status) => Container(
-              color: status == ConnectivityResult.none ? Colors.red : Colors.green,
-              padding: EdgeInsets.all(8),
-              child: Text(
-                status == ConnectivityResult.none ? 'Offline' : 'Online',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            loading: () => SizedBox(),
-            error: (_, __) => SizedBox(),
+          Consumer(
+            builder: (context, ref, child) {
+              final connectivityNotifier = ref.watch(connectivityNotifierProvider.notifier);
+              final isConnected = connectivityNotifier.isConnected;
+
+              return Container(
+                color: isConnected ? Colors.green : Colors.red,
+                padding: EdgeInsets.all(8),
+                child: Text(
+                  isConnected ? 'Online' : 'Offline',
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            },
           ),
         ],
       ),

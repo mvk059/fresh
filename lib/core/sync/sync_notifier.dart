@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fresh/app/providers.dart';
 import 'package:fresh/core/database/database_interface.dart';
 import 'package:fresh/core/network/network_interface.dart';
 import 'package:fresh/core/sync/sync_state.dart';
-import 'package:fresh/core/utils/constants.dart' as constants;
+import 'package:fresh/core/utils/connectivity_notifier.dart';
 import 'package:logger/logger.dart';
 
 class SyncNotifier extends StateNotifier<SyncState> {
@@ -14,14 +12,13 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
   final logger = Logger(
       printer: PrettyPrinter(
-        methodCount: 0,
-        errorMethodCount: 5,
-        lineLength: 50,
-        colors: true,
-        printEmojis: true,
-        printTime: false,
-      )
-  );
+    methodCount: 0,
+    errorMethodCount: 5,
+    lineLength: 50,
+    colors: true,
+    printEmojis: true,
+    printTime: false,
+  ));
 
   SyncNotifier(this._network, this._database) : super(SyncState());
 
@@ -29,7 +26,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
     state = SyncState(isSyncing: true);
     try {
       await _syncCoordinates();
-      state = SyncState();
+      state = SyncState(isSyncComplete: true);
+      logger.d('LOGG SyncState complete $state');
     } catch (e) {
       state = SyncState(error: e.toString());
     }
@@ -38,7 +36,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
   Future<void> _syncCoordinates() async {
     logger.d('LOGG _syncCoordinates');
     // Get un-synchronized coordinates from local database
-    final unSyncedCoordinates = await _database.query('coordinates', where: 'synced = 0');
+    final unSyncedCoordinates =
+        await _database.query('coordinates', where: 'synced = 0');
 
     logger.d('LOGG unSyncedCoordinates: $unSyncedCoordinates');
     if (unSyncedCoordinates.isNotEmpty) {
@@ -49,7 +48,8 @@ class SyncNotifier extends StateNotifier<SyncState> {
       // logger.d('LOGG syncedCoordinates $syncedCoordinates');
       // Update local database with synced status
       for (var coord in unSyncedCoordinates) {
-        await _database.update('coordinates', {'synced': 1}, 'id = ${coord['id']}');
+        await _database.update(
+            'coordinates', {'synced': 1}, 'id = ${coord['id']}');
       }
     }
 
@@ -64,13 +64,17 @@ class SyncNotifier extends StateNotifier<SyncState> {
 
     // final updatedCoordinates =  await _database.query('coordinates', where: 'synced = 0');
     // logger.d('LOGG updatedCoordinates: $updatedCoordinates');
+  }
 
+  Future<void> syncIfNeeded() async {
+    logger.d('LOGG syncIfNeeded');
+    if (!await isConnected()) return;
+    logger.d('LOGG syncIfNeeded 2');
+    syncCoordinates();
   }
 }
 
-final syncServiceProvider = StateNotifierProvider<SyncNotifier, SyncState>((ref) {
-  return SyncNotifier(
-      ref.watch(networkProvider),
-      ref.watch(databaseProvider)
-  );
+final syncServiceProvider =
+    StateNotifierProvider<SyncNotifier, SyncState>((ref) {
+  return SyncNotifier(ref.watch(networkProvider), ref.watch(databaseProvider));
 });
